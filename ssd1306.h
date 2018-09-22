@@ -94,10 +94,6 @@ typedef struct {
 /**
  * @brief Fills the screen with (Pattern)
  * 
- * Note that this corresponds to 8 pixels vertically per column.
- * For example, passing 1 will fill the screen with a horizontal line
- * every 8 pixels in the y direction.
- * 
  * @param [ in ] Pattern 8 Bit pattern to fill the screen with.
  * @remark Pattern corresponds to 8 pixels vertically with bit 0 being the top pixel and bit 7 being the bottom.
  * @remark For example, a pattern of 1 would be a line going horizontally from one side of the screen to the other every 8 pixels vertically.
@@ -110,7 +106,9 @@ void SSD1306_Clear( const uint8_t Pattern );
  * @param x [ in ] X Coordinate 
  * @param y [ in ] Y Coordinate
  * @param Color [ in ] Pixel color
- * @remark This overwrites any existing pixels at the given coordinates
+ * @remark This overwrites any existing pixels at the page the y coordinate is located on
+ * @remark For example, if you have a pixel on at 0,0 and you then draw a pixel at 0,1 then the first pixel will be overwritten
+ * @remark and only the one at 0,1 will be visible
  */
 void SSD1306_DrawPixel( const int x, const int y, const int Color );
 
