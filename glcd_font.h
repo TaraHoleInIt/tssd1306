@@ -17,6 +17,8 @@ extern "C" {
 #endif
 
 extern const GLCD_FontDef Font_Droid_Sans_7x10;
+extern const GLCD_FontDef Font_Ubuntu_Mono_9x16;
+
 extern const GLCD_FontDef Font_Tarable7Seg_16x32;
 extern const GLCD_FontDef Font_Tarable7Seg_32x64;
 

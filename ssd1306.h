@@ -15,23 +15,29 @@
     #define BIT( n ) ( 1 << n )
 #endif
 
-/**
- * @brief Width of your display
- * 
- */
-#define SSD1306_CFG_WIDTH 128
+#if ! defined SSD1306_CFG_WIDTH
+    /**
+     * @brief Width of your display
+     * 
+     */
+    #define SSD1306_CFG_WIDTH 128
+#endif
 
-/**
- * @brief Height of your display
- * 
- */
-#define SSD1306_CFG_HEIGHT 64
+#if ! defined SSD1306_CFG_HEIGHT
+    /**
+     * @brief Height of your display
+     * 
+     */
+    #define SSD1306_CFG_HEIGHT 64
+#endif
 
-/**
- * @brief I2C Address of your display
- * 
- */
-#define SSD1306_CFG_ADDRESS 0x3C
+#if ! defined SSD1306_CFG_ADDRESS
+    /**
+     * @brief I2C Address of your display
+     * 
+     */
+    #define SSD1306_CFG_ADDRESS 0x3C
+#endif
 
 #define DisplayAddress SSD1306_CFG_ADDRESS
 #define DisplayWidth SSD1306_CFG_WIDTH

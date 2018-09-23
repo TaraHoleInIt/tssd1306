@@ -37,6 +37,27 @@ PROGMEM static const InitCommand InitSequence[ ] = {
 };
 #endif
 
+#if SSD1306_CFG_WIDTH == 128 && SSD1306_CFG_HEIGHT == 32
+PROGMEM static const InitCommand InitSequence[ ] = {
+    { SSD1306_Op_SetMuxRatio, 1, { 31, 0 } },
+    { SSD1306_Op_SetDisplayOffset, 1, { 0, 0 } },
+    { SSD1306_Op_SetDisplayStartLine, 0, { 0, 0 } },
+    { SSD1306_Op_Horizontal_Flip_Off, 0, { 0, 0 } },
+    { SSD1306_Op_Vertical_Flip_Off, 0, { 0, 0 } },
+    { SSD1306_Op_SetCOMPinsConfig, 1, { SSD1306_COM_Disable_LR_Remap | SSD1306_COM_Pins_Sequential | 0x02, 0 } },
+    { SSD1306_Op_SetContrast, 1, { 0x7F, 0 } },
+    { SSD1306_Op_EntireDisplayOff, 0, { 0, 0 } },
+    { SSD1306_Op_SetNormal, 0, { 0, 0 } },
+    { SSD1306_Op_SetDisplayClock, 1, { 0x80, 0 } },
+    { SSD1306_Op_EnableChargePumpRegulator, 1, { 0x14, 0 } },
+    { SSD1306_Op_SetAddressMode, 1, { 0, 0 } },
+    { SSD1306_Op_SetColumnAddress, 2, { 0, 127 } },
+    { SSD1306_Op_SetPageAddress, 2, { 0, 3 } },
+    { SSD1306_Op_EntireDisplayOn, 0, { 0, 0 } },
+    { SSD1306_Op_DisplayOn, 0, { 0, 0 } }
+};
+#endif
+
 static void WriteSingleByte( const uint8_t Data ) {
     I2C->Write( &Data, sizeof( const uint8_t ) );
 }
