@@ -66,5 +66,6 @@ const GLCD_FontDef Font_Tarable7Seg_16x32 = {
     32,
     32,
     ' ',
-    'F'
+    'F',
+    false
 };

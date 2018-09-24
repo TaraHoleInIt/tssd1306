@@ -116,5 +116,6 @@ const GLCD_FontDef Font_Droid_Sans_7x10 = {
     10,
     16,
     ' ',
-    '~'
+    '~',
+    false
 };

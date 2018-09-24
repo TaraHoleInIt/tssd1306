@@ -116,5 +116,6 @@ const GLCD_FontDef Font_Ubuntu_Mono_9x16 = {
     16,
     16,
     ' ',
-    '~'
+    '~',
+    false
 };

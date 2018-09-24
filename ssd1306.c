@@ -11,7 +11,7 @@
 #include "ssd1306.h"
 #include "glcd_font.h"
 
-static const GLCD_FontDef* CurrentFont = &Font_Droid_Sans_7x10;
+static const GLCD_FontDef* CurrentFont = NULL;
 
 const I2CProcs* I2C = NULL;
 
@@ -158,6 +158,7 @@ static int GetGlyphInfo( const char c, int* OutGlyphWidth, const uint8_t** OutGl
     const uint8_t* GlyphData = NULL;
     int GlyphWidth = 0;
     int GlyphSize = 0;
+    int i = 0;
 
     if ( c < CurrentFont->FirstChar || c > CurrentFont->LastChar ) {
         return 0;
@@ -165,15 +166,37 @@ static int GetGlyphInfo( const char c, int* OutGlyphWidth, const uint8_t** OutGl
 
     GlyphSize = ( CurrentFont->FontWidthPx * ( CurrentFont->FontHeightPxRoundedUp / 8 ) ) + 1;
 
-    GlyphData = CurrentFont->Data + ( GlyphSize * ( c - CurrentFont->FirstChar ) );
-    GlyphWidth = ( int ) pgm_read_byte( GlyphData );
+    if ( CurrentFont->IsStream == false ) {
+        GlyphData = CurrentFont->Data + ( GlyphSize * ( c - CurrentFont->FirstChar ) );
+        GlyphWidth = ( int ) pgm_read_byte( GlyphData );
 
-    if ( OutGlyphWidth != NULL ) {
-        *OutGlyphWidth = GlyphWidth;
-    }
+        if ( OutGlyphWidth != NULL ) {
+            *OutGlyphWidth = GlyphWidth;
+        }
 
-    if ( OutGlyphData != NULL ) {
-        *OutGlyphData = ( GlyphData + 1 );
+        if ( OutGlyphData != NULL ) {
+            *OutGlyphData = ( GlyphData + 1 );
+        }
+    } else {
+        /* This seeks character by character within the font data until we reach our intended target */
+        for ( i = 0, GlyphData = CurrentFont->Data; i < ( c - CurrentFont->FirstChar ); i++ ) {
+            GlyphWidth = ( int ) pgm_read_byte( GlyphData );
+            GlyphSize = ( GlyphWidth * ( CurrentFont->FontHeightPxRoundedUp / 8 ) ) + 1;
+
+            GlyphData+= ( GlyphSize );
+        }
+
+        /* Re-read width */
+        GlyphWidth = pgm_read_byte( GlyphData );
+
+        if ( OutGlyphWidth != NULL ) {
+            *OutGlyphWidth = GlyphWidth;
+        }
+
+        if ( OutGlyphData != NULL ) {
+            /* Skip past width data byte */
+            *OutGlyphData = ( GlyphData + 1 );
+        }
     }
 
     return 1;
@@ -191,7 +214,7 @@ int SSD1306_DrawChar( const char c, const int x, const int y, const int Color ) 
     int cx = 0;
     int cy = 0;
 
-    if ( GetGlyphInfo( c, &GlyphWidth, &GlyphData ) > 0 ) {
+    if ( CurrentFont != NULL && GetGlyphInfo( c, &GlyphWidth, &GlyphData ) > 0 ) {
         GlyphHeight = CurrentFont->FontHeightPxRoundedUp;
 
         if ( x < 0 || ( x + GlyphWidth ) >= DisplayWidth || y < 0 || ( y + GlyphHeight ) > DisplayHeight ) {
@@ -232,29 +255,31 @@ int SSD1306_DrawChar( const char c, const int x, const int y, const int Color ) 
 void SSD1306_DrawString( const char* Text, int x, int y, const int Color ) {
     int GlyphWidth = 0;
 
-    while ( *Text != 0 ) {
-        switch ( *Text ) {
-            case '\n': {
-                y+= CurrentFont->FontHeightPxRoundedUp;
-                x = 0;
+    if ( CurrentFont != NULL ) {
+        while ( *Text != 0 ) {
+            switch ( *Text ) {
+                case '\n': {
+                    y+= CurrentFont->FontHeightPxRoundedUp;
+                    x = 0;
 
-                break;
-            }
-            default: {
-                if ( GetGlyphInfo( *Text, &GlyphWidth, NULL ) > 0 ) {
-                    if ( ( x + GlyphWidth ) >= DisplayWidth ) {
-                        y+= CurrentFont->FontHeightPxRoundedUp;
-                        x = 0;
+                    break;
+                }
+                default: {
+                    if ( GetGlyphInfo( *Text, &GlyphWidth, NULL ) > 0 ) {
+                        if ( ( x + GlyphWidth ) >= DisplayWidth ) {
+                            y+= CurrentFont->FontHeightPxRoundedUp;
+                            x = 0;
+                        }
+
+                        x+= SSD1306_DrawChar( *Text, x, y, Color );
                     }
 
-                    x+= SSD1306_DrawChar( *Text, x, y, Color );
+                    break;
                 }
+            };
 
-                break;
-            }
-        };
-
-        Text++;
+            Text++;
+        }
     }
 }
 
