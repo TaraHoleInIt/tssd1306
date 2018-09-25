@@ -245,7 +245,7 @@ int SSD1306_DrawChar( const char c, const int x, const int y, const int Color ) 
             
             SSD1306_WriteData( RenderedGlyph, GlyphSize );
 
-            return GlyphWidth + 1;
+            return GlyphWidth;
         }
     }
 
