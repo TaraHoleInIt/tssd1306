@@ -244,9 +244,6 @@ int SSD1306_DrawChar( const char c, const int x, const int y, const SSD_COLOR Co
 
             memset( RenderedGlyph, 0x00, GlyphSize );
 
-            /* Skip last pixel column in glyph since it's just blank and
-             * not actually in the font data.
-             */
             for ( cx = 0; cx < GlyphWidth; cx++ ) {
                 for ( cy = 0; cy < GlyphHeightBytes; cy++ ) {
                     RenderedGlyph[ cx + ( cy * GlyphWidth ) ] = pgm_read_byte( GlyphData++ );
