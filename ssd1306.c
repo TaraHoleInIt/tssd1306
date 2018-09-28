@@ -22,6 +22,11 @@ static void SSD1306_SendSingleByteCommand( const uint8_t Command );
 static void SSD1306_SendDoubleByteCommand( const uint8_t Command, const uint8_t Param0 );
 static void SSD1306_SendTripleByteCommand( const uint8_t Command, const uint8_t Param0, const uint8_t Param1 );
 
+#if defined HAS_DEBUG
+    __attribute__( ( weak ) ) void DebugPrintString( const char* Text, ... ) {
+    }
+#endif
+
 static void SSD1306_WriteData( const uint8_t* Data, size_t Length ) {
     const uint8_t WriteIsData = SSD1306_I2C_Data;
     size_t BytesToWrite = 0;
@@ -99,7 +104,7 @@ void SSD1306_Clear( const uint8_t Pattern ) {
     }
 }
 
-void SSD1306_DrawPixel( const int x, const int y, const int Color ) {
+void SSD1306_DrawPixel( const int x, const int y, const SSD_COLOR Color ) {
     int YBit = ( y & 0x07 );
     int YPage = ( y / 8 );
 
@@ -109,7 +114,7 @@ void SSD1306_DrawPixel( const int x, const int y, const int Color ) {
     SSD1306_WriteDataByte( ( Color ) ? BIT( YBit ) : 0 );
 }
 
-void SSD1306_DrawHLine( const int x0, const int y, const int x1, const int Color ) {
+void SSD1306_DrawHLine( const int x0, const int y, const int x1, const SSD_COLOR Color ) {
     uint8_t PageBuffer[ DisplayWidth ];
     int Width = ( x1 - x0 );
     int YBit = ( y & 0x07 );
@@ -126,7 +131,7 @@ void SSD1306_DrawHLine( const int x0, const int y, const int x1, const int Color
     SSD1306_WriteData( PageBuffer, Width );
 }
 
-void SSD1306_DrawVLine( const int x, const int y0, const int y1, const int Color ) {
+void SSD1306_DrawVLine( const int x, const int y0, const int y1, const SSD_COLOR Color ) {
     uint8_t ColBuffer[ DisplayHeight / 8 ];
     int StartYPage = ( y0 / 8 );
     int EndYPage = ( y1 / 8 );
@@ -202,7 +207,7 @@ static int GetGlyphInfo( const char c, int* OutGlyphWidth, const uint8_t** OutGl
     return 1;
 }
 
-int SSD1306_DrawChar( const char c, const int x, const int y, const int Color ) {
+int SSD1306_DrawChar( const char c, const int x, const int y, const SSD_COLOR Color ) {
     const uint8_t* GlyphData = NULL;
     uint8_t* RenderedGlyph = NULL;
     int GlyphHeightBytes = 0;
@@ -229,14 +234,19 @@ int SSD1306_DrawChar( const char c, const int x, const int y, const int Color ) 
         YEndPage = ( ( y + CurrentFont->FontHeightPxRoundedUp ) / 8 );
         YEndPage = ( YEndPage >= DisplayPages ) ? DisplayPages - 1 : YEndPage;
         
-        RenderedGlyph = ( uint8_t* ) alloca( GlyphWidth * GlyphHeightBytes );
+        RenderedGlyph = ( uint8_t* ) alloca( GlyphSize );
 
         if ( RenderedGlyph != NULL ) {
-            SSD1306_SendTripleByteCommand( SSD1306_Op_SetColumnAddress, x, ( x + GlyphWidth ) - 1 );
+            //DebugPrintString( "%s: c [%c] x [%d] y [%d] YStartPage [%d] YEndPage [%d]\n", __func__, c, x, y, YStartPage, YEndPage );
+
+            SSD1306_SendTripleByteCommand( SSD1306_Op_SetColumnAddress, x, ( ( x + GlyphWidth ) - 1 ) );
             SSD1306_SendTripleByteCommand( SSD1306_Op_SetPageAddress, YStartPage, YEndPage );
 
             memset( RenderedGlyph, 0x00, GlyphSize );
 
+            /* Skip last pixel column in glyph since it's just blank and
+             * not actually in the font data.
+             */
             for ( cx = 0; cx < GlyphWidth; cx++ ) {
                 for ( cy = 0; cy < GlyphHeightBytes; cy++ ) {
                     RenderedGlyph[ cx + ( cy * GlyphWidth ) ] = pgm_read_byte( GlyphData++ );
@@ -252,7 +262,7 @@ int SSD1306_DrawChar( const char c, const int x, const int y, const int Color ) 
     return -1;
 }
 
-void SSD1306_DrawString( const char* Text, int x, int y, const int Color ) {
+void SSD1306_DrawString( const char* Text, int x, int y, const SSD_COLOR Color ) {
     int GlyphWidth = 0;
 
     if ( CurrentFont != NULL ) {
@@ -271,7 +281,11 @@ void SSD1306_DrawString( const char* Text, int x, int y, const int Color ) {
                             x = 0;
                         }
 
-                        x+= SSD1306_DrawChar( *Text, x, y, Color );
+                        GlyphWidth = SSD1306_DrawChar( *Text, x, y, Color );
+
+                        if ( GlyphWidth > 0 ) {
+                            x+= GlyphWidth;
+                        }
                     }
 
                     break;

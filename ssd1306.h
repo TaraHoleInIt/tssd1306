@@ -77,6 +77,11 @@
 #define SSD1306_I2C_Command 0x00
 #define SSD1306_I2C_Data 0x40
 
+typedef enum {
+    SSD_COLOR_BLACK = 0,
+    SSD_COLOR_WHITE
+} SSD_COLOR;
+
 /**
  * @brief Structure containing pointers to I2C communication functions
  * 
@@ -95,6 +100,10 @@ typedef struct {
 
 #ifdef __cplusplus
     extern "C" {
+#endif
+
+#if defined HAS_DEBUG
+    __attribute__( ( weak ) ) void DebugPrintString( const char* Text, ... );
 #endif
 
 /**
@@ -116,7 +125,7 @@ void SSD1306_Clear( const uint8_t Pattern );
  * @remark For example, if you have a pixel on at 0,0 and you then draw a pixel at 0,1 then the first pixel will be overwritten
  * @remark and only the one at 0,1 will be visible
  */
-void SSD1306_DrawPixel( const int x, const int y, const int Color );
+void SSD1306_DrawPixel( const int x, const int y, const SSD_COLOR Color );
 
 /**
  * @brief Draws a horizontal line
@@ -127,7 +136,7 @@ void SSD1306_DrawPixel( const int x, const int y, const int Color );
  * @param Color Line color
  * @remark This will overwrite anything already within the same page ( y / 8 )
  */
-void SSD1306_DrawHLine( const int x0, const int y, const int x1, const int Color );
+void SSD1306_DrawHLine( const int x0, const int y, const int x1, const SSD_COLOR Color );
 
 /**
  * @brief Draws a vertical line
@@ -137,7 +146,7 @@ void SSD1306_DrawHLine( const int x0, const int y, const int x1, const int Color
  * @param y1 [ in ] End Y coordinate
  * @param Color [ in ] Line color
  */
-void SSD1306_DrawVLine( const int x, const int y0, const int y1, const int Color );
+void SSD1306_DrawVLine( const int x, const int y0, const int y1, const SSD_COLOR Color );
 
 /**
  * @brief Draws a character
@@ -148,7 +157,7 @@ void SSD1306_DrawVLine( const int x, const int y0, const int y1, const int Color
  * @param Color [ in ] Color to draw character
  * @return int Width of the character if drawn, -1 if character would be clipped or is not in the font
  */
-int SSD1306_DrawChar( const char c, const int x, const int y, const int Color );
+int SSD1306_DrawChar( const char c, const int x, const int y, const SSD_COLOR Color );
 
 /**
  * @brief Draws a string of characters
@@ -159,7 +168,7 @@ int SSD1306_DrawChar( const char c, const int x, const int y, const int Color );
  * @param Color [ in ] Color to draw characters
  * @remark This will obey newline characters as well as move down a row if the end of the screen is reached
  */
-void SSD1306_DrawString( const char* Text, int x, int y, const int Color );
+void SSD1306_DrawString( const char* Text, int x, int y, const SSD_COLOR Color );
 
 /**
  * @brief Sets the current font

@@ -22,14 +22,18 @@ typedef struct {
 extern "C" {
 #endif
 
-extern const GLCD_FontDef Font_Droid_Sans_7x10;
-extern const GLCD_FontDef Font_Ubuntu_Mono_9x16;
-extern const GLCD_FontDef Font_Ubuntu_Mono_Bold_9x16;
-extern const GLCD_FontDef Font_Ubuntu_Mono_7x13;
-extern const GLCD_FontDef Font_Ubuntu_Mono_13x22;
-
 extern const GLCD_FontDef Font_Tarable7Seg_16x32;
-extern const GLCD_FontDef Font_Tarable7Seg_32x64;
+
+extern const GLCD_FontDef Font_Terminus_6x12;
+extern const GLCD_FontDef Font_Terminus_9x18;
+extern const GLCD_FontDef Font_Terminus_10x23;
+
+extern const GLCD_FontDef Font_Droid_Sans_Fallback_9x11;
+extern const GLCD_FontDef Font_Droid_Sans_Fallback_11x12;
+extern const GLCD_FontDef Font_Droid_Sans_Fallback_13x14;
+extern const GLCD_FontDef Font_Droid_Sans_Fallback_15x17;
+extern const GLCD_FontDef Font_Droid_Sans_Fallback_17x18;
+extern const GLCD_FontDef Font_Droid_Sans_Fallback_19x22;
 
 #ifdef __cplusplus
 }
