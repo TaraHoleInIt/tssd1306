@@ -35,6 +35,8 @@ extern const GLCD_FontDef Font_Droid_Sans_Fallback_15x17;
 extern const GLCD_FontDef Font_Droid_Sans_Fallback_17x18;
 extern const GLCD_FontDef Font_Droid_Sans_Fallback_19x22;
 
+extern const GLCD_FontDef Font_BM437_IBM_BIOS_8x8;
+
 #ifdef __cplusplus
 }
 #endif

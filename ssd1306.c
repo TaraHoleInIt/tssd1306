@@ -259,7 +259,7 @@ int SSD1306_DrawChar( const char c, const int x, const int y, const SSD_COLOR Co
     return -1;
 }
 
-void SSD1306_DrawString( const char* Text, int x, int y, const SSD_COLOR Color ) {
+int SSD1306_DrawString( const char* Text, int x, int y, const SSD_COLOR Color ) {
     int GlyphWidth = 0;
 
     if ( CurrentFont != NULL ) {
@@ -292,6 +292,8 @@ void SSD1306_DrawString( const char* Text, int x, int y, const SSD_COLOR Color )
             Text++;
         }
     }
+
+    return x;
 }
 
 void SSD1306_SetFont( const GLCD_FontDef* Font ) {

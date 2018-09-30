@@ -166,9 +166,10 @@ int SSD1306_DrawChar( const char c, const int x, const int y, const SSD_COLOR Co
  * @param x [ in ] X Coordinate
  * @param y [ in ] Y Coordinate
  * @param Color [ in ] Color to draw characters
+ * @return X Coordinate after last character
  * @remark This will obey newline characters as well as move down a row if the end of the screen is reached
  */
-void SSD1306_DrawString( const char* Text, int x, int y, const SSD_COLOR Color );
+int SSD1306_DrawString( const char* Text, int x, int y, const SSD_COLOR Color );
 
 /**
  * @brief Sets the current font
