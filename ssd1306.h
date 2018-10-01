@@ -104,6 +104,8 @@ typedef struct {
 
 #if defined HAS_DEBUG
     __attribute__( ( weak ) ) void DebugPrintString( const char* Text, ... );
+#else
+    #define DebugPrintString( text, ... )
 #endif
 
 /**

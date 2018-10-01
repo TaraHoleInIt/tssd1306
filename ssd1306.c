@@ -30,8 +30,6 @@ static int PrintY = 0;
 #if defined HAS_DEBUG
     __attribute__( ( weak ) ) void DebugPrintString( const char* Text, ... ) {
     }
-#else
-    #define DebugPrintString( text )
 #endif
 
 static void SSD1306_WriteData( const uint8_t* Data, size_t Length ) {
