@@ -306,7 +306,7 @@ static void PrintConstrain( const int GlyphWidth ) {
         PrintX = 0;
     }
 
-    if ( ( PrintY + CurrentFont->FontHeightPxRoundedUp ) >= DisplayHeight ) {
+    if ( ( PrintY + CurrentFont->FontHeightPxRoundedUp ) > DisplayHeight ) {
         PrintY = 0;
         PrintX = 0;
     }
