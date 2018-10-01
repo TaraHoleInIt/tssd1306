@@ -172,6 +172,58 @@ int SSD1306_DrawChar( const char c, const int x, const int y, const SSD_COLOR Co
 int SSD1306_DrawString( const char* Text, int x, int y, const SSD_COLOR Color );
 
 /**
+ * @brief Sets the location where the SSD1306_Printxxx routines should start drawing characters
+ * 
+ * @param [ in ] x New X cursor coordinate 
+ * @param [ in ] y New Y cursor coordinage 
+ */
+void SSD1306_SetPrintCursor( const int x, const int y );
+
+/**
+ * @brief Gets the location of the cursor used in the SSD1306_Printxxx routines
+ * 
+ * @param [ out ] x Current cursor X coordinate 
+ * @param [ out ] y Current cursor Y coordinate 
+ */
+void SSD1306_GetPrintCursor( int* x, int* y );
+
+/**
+ * @brief Returns the current drawing color used by the SSD1306_Printxxx routines
+ * 
+ * @return const SSD_COLOR Current text drawing color
+ */
+const SSD_COLOR SSD1306_GetPrintColor( void );
+
+/**
+ * @brief Sets the drawing color used by the SSD1306_Printxxx routnes
+ * 
+ * @param [ in ] Color New color 
+ */
+void SSD1306_SetPrintColor( const SSD_COLOR Color ) ;
+
+/**
+ * @brief Draws a character to the screen
+ * 
+ * @param [ in ] c Character to draw 
+ * @remark Supported escape characters are \r \n \t
+ */
+void SSD1306_PrintChar( const char c );
+
+/**
+ * @brief Draws a string of characters to the screen
+ * 
+ * @param [ in ] Text Text to draw 
+ */
+void SSD1306_PrintString( const char* Text );
+
+/**
+ * @brief Draws an integer to the screen
+ * 
+ * @param [ in ] Value Integer value to draw 
+ */
+void SSD1306_PrintInt( const int Value );
+
+/**
  * @brief Sets the current font
  * 
  * @param Font [ in ] New font to use

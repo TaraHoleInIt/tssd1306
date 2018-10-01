@@ -6,6 +6,7 @@
  */
 
 #include <string.h>
+#include <stdlib.h>
 #include <alloca.h>
 #include <avr/pgmspace.h>
 #include "ssd1306.h"
@@ -22,9 +23,15 @@ static void SSD1306_SendSingleByteCommand( const uint8_t Command );
 static void SSD1306_SendDoubleByteCommand( const uint8_t Command, const uint8_t Param0 );
 static void SSD1306_SendTripleByteCommand( const uint8_t Command, const uint8_t Param0, const uint8_t Param1 );
 
+static SSD_COLOR PrintColor = SSD_COLOR_WHITE;
+static int PrintX = 0;
+static int PrintY = 0;
+
 #if defined HAS_DEBUG
     __attribute__( ( weak ) ) void DebugPrintString( const char* Text, ... ) {
     }
+#else
+    #define DebugPrintString( text )
 #endif
 
 static void SSD1306_WriteData( const uint8_t* Data, size_t Length ) {
@@ -223,6 +230,7 @@ int SSD1306_DrawChar( const char c, const int x, const int y, const SSD_COLOR Co
         GlyphHeight = CurrentFont->FontHeightPxRoundedUp;
 
         if ( x < 0 || ( x + GlyphWidth ) >= DisplayWidth || y < 0 || ( y + GlyphHeight ) > DisplayHeight ) {
+            DebugPrintString( "Clipped [%c] at %d,%d x+w: %d, w: %d\n", c, x, y, ( x + GlyphWidth ), GlyphWidth );
             return -1;
         }
 
@@ -260,40 +268,105 @@ int SSD1306_DrawChar( const char c, const int x, const int y, const SSD_COLOR Co
 }
 
 int SSD1306_DrawString( const char* Text, int x, int y, const SSD_COLOR Color ) {
+    SSD_COLOR LastColor = SSD1306_GetPrintColor( );
+
+    SSD1306_SetPrintCursor( x, y );
+    SSD1306_SetPrintColor( Color );
+
+    SSD1306_PrintString( Text );
+    SSD1306_SetPrintColor( LastColor );
+    
+    return PrintX;
+}
+
+void SSD1306_SetPrintCursor( const int x, const int y ) {
+    PrintX = x;
+    PrintY = y;
+}
+
+void SSD1306_GetPrintCursor( int* x, int* y ) {
+    if ( x != NULL ) {
+        *x = PrintX;
+    }
+
+    if ( y != NULL ) {
+        *y = PrintY;
+    }
+}
+
+const SSD_COLOR SSD1306_GetPrintColor( void ) {
+    return PrintColor;
+}
+
+void SSD1306_SetPrintColor( const SSD_COLOR Color ) {
+    PrintColor = Color;
+}
+
+static void PrintConstrain( const int GlyphWidth ) {
+    if ( ( PrintX + GlyphWidth ) >= DisplayWidth ) {
+        PrintY+= CurrentFont->FontHeightPxRoundedUp;
+        PrintX = 0;
+    }
+
+    if ( ( PrintY + CurrentFont->FontHeightPxRoundedUp ) >= DisplayHeight ) {
+        PrintY = 0;
+        PrintX = 0;
+    }
+}
+
+void SSD1306_PrintChar( const char c ) {
     int GlyphWidth = 0;
 
     if ( CurrentFont != NULL ) {
-        while ( *Text != 0 ) {
-            switch ( *Text ) {
-                case '\n': {
-                    y+= CurrentFont->FontHeightPxRoundedUp;
-                    x = 0;
+         switch ( c ) {
+            case '\r': {
+                PrintX = 0;
+                PrintConstrain( 0 );
+                break;
+            }
+            case '\n': {
+                PrintY+= CurrentFont->FontHeightPxRoundedUp;
+                PrintX = 0;
 
-                    break;
-                }
-                default: {
-                    if ( GetGlyphInfo( *Text, &GlyphWidth, NULL ) > 0 ) {
-                        if ( ( x + GlyphWidth ) >= DisplayWidth ) {
-                            y+= CurrentFont->FontHeightPxRoundedUp;
-                            x = 0;
+                PrintConstrain( 0 );
+                break;
+            }
+            case '\t': {
+                SSD1306_PrintChar( ' ' );
+                SSD1306_PrintChar( ' ' );
+                SSD1306_PrintChar( ' ' );
+                SSD1306_PrintChar( ' ' );
+                    
+                break;
+            }
+            default: {
+                if ( GetGlyphInfo( c, &GlyphWidth, NULL ) > 0 ) {
+                    PrintConstrain( GlyphWidth );
+                        if ( SSD1306_DrawChar( c, PrintX, PrintY, PrintColor ) > 0 ) {
+                            PrintX+= GlyphWidth;
                         }
-
-                        GlyphWidth = SSD1306_DrawChar( *Text, x, y, Color );
-
-                        if ( GlyphWidth > 0 ) {
-                            x+= GlyphWidth;
-                        }
-                    }
-
-                    break;
+                    PrintConstrain( GlyphWidth );
                 }
-            };
 
-            Text++;
+                break;
+            }
+        };
+    }
+}
+
+void SSD1306_PrintString( const char* Text ) {
+    if ( CurrentFont != NULL && Text != NULL ) {
+        while ( *Text != '\0' ) {
+            SSD1306_PrintChar( *Text++ );
         }
     }
+}
 
-    return x;
+void SSD1306_PrintInt( const int Value ) {
+    char Buffer[ 16 ];
+
+    itoa( Value, Buffer, 10 );
+    SSD1306_PrintString( Buffer );
 }
 
 void SSD1306_SetFont( const GLCD_FontDef* Font ) {
