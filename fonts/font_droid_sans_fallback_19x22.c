@@ -120,6 +120,7 @@ const GLCD_FontDef Font_Droid_Sans_Fallback_19x22 = {
 	24,
 	'\x20',
 	'\x7F',
-	true
+	true,
+	false
 };
 

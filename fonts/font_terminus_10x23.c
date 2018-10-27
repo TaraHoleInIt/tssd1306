@@ -117,5 +117,6 @@ const GLCD_FontDef Font_Terminus_10x23 = {
 	24,
 	'\x20',
 	'\x7F',
-	true
+	true,
+	false
 };

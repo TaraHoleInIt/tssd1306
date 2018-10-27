@@ -117,5 +117,6 @@ const GLCD_FontDef Font_Terminus_9x18 = {
     24,
     ' ',
     '\x7F',
-    true
+    true,
+	false
 };

@@ -83,13 +83,27 @@ typedef enum {
 } SSD_COLOR;
 
 /**
+ * @brief Type of memory to pull data from when writing to the display
+ * 
+ */
+typedef enum {
+    DataSource_Local = 0, /**< Data is in local addressable space */
+    DataSource_Progmem, /**< Data is in flash/progmem space */
+    DataSource_EEPROM /**< Data is on an EEPROM */
+} DataSource;
+
+/**
  * @brief Structure containing pointers to I2C communication functions
  * 
  */
 typedef struct {
     void ( *StartTransmission ) ( const int Address );
     void ( *Write ) ( const uint8_t* Data, const size_t Length );
+    void ( *WriteByte ) ( const uint8_t Data );
     void ( *EndTransmission ) ( void );
+
+    size_t ( *EEPROMRead ) ( const uint16_t Address, uint8_t* Buffer, size_t Length );
+    uint8_t ( *EEPROMReadByte ) ( const uint16_t Address );
 
     /**
      * @remark Maximum number of bytes your I2C API can transmit at a time
@@ -107,6 +121,49 @@ typedef struct {
 #else
     #define DebugPrintString( text, ... )
 #endif
+
+/**
+ * @brief Sends a command to the display that takes no parameters
+ * 
+ * @param [ in ] Command Opcode of command
+ * @remark For example, SSD1306_Op_Horizontal_Flip_On is a single byte command
+ */
+void SSD1306_SendSingleByteCommand( const uint8_t Command );
+
+/**
+ * @brief Sends a command to the display that takes a single parameter
+ * 
+ * @param [ in ] Command Opcode of command
+ * @param [ in ] Param0 Command parameter
+ * @remark For example, SSD1306_Op_SetContrast is a double byte command
+ */
+void SSD1306_SendDoubleByteCommand( const uint8_t Command, const uint8_t Param0 );
+
+/**
+ * @brief Sends a command to the display that takes two parameters
+ * 
+ * @param [ in ] Command Opcode of command 
+ * @param [ in ] Param0 First parameter
+ * @param [ in ] Param1 Second parameter
+ * @remark SSD1306_Op_SetColumnAddress is an example of a triple byte command
+ */
+void SSD1306_SendTripleByteCommand( const uint8_t Command, const uint8_t Param0, const uint8_t Param1 );
+
+/**
+ * @brief Writes data from the given source to the display
+ * 
+ * @param [ in ] Source Where to pull the data from 
+ * @param [ in ] Data Pointer to data, except for EEPROMS where this is an address within the EEPROM
+ * @param [ in ] Length Length of data to send 
+ */
+void SSD1306_WriteData( DataSource Source, const uint8_t* Data, size_t Length );
+
+/**
+ * @brief Writes a single byte to the display
+ * 
+ * @param [ in ] Data Data byte to write to the display 
+ */
+void SSD1306_WriteDataByte( const uint8_t Data );
 
 /**
  * @brief Fills the screen with (Pattern)
@@ -149,6 +206,8 @@ void SSD1306_DrawHLine( const int x0, const int y, const int x1, const SSD_COLOR
  * @param Color [ in ] Line color
  */
 void SSD1306_DrawVLine( const int x, const int y0, const int y1, const SSD_COLOR Color );
+
+void SSD1306_FillRect( const int x0, const int y0, const int x1, const int y1, const SSD_COLOR Color );
 
 /**
  * @brief Draws a character

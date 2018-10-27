@@ -117,5 +117,6 @@ const GLCD_FontDef Font_Terminus_6x12 = {
     16,
     ' ',
     '\x7F',
-    true
+    true,
+	false
 };
