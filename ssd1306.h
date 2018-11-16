@@ -15,35 +15,6 @@
     #define BIT( n ) ( 1 << n )
 #endif
 
-#if ! defined SSD1306_CFG_WIDTH
-    /**
-     * @brief Width of your display
-     * 
-     */
-    #define SSD1306_CFG_WIDTH 128
-#endif
-
-#if ! defined SSD1306_CFG_HEIGHT
-    /**
-     * @brief Height of your display
-     * 
-     */
-    #define SSD1306_CFG_HEIGHT 64
-#endif
-
-#if ! defined SSD1306_CFG_ADDRESS
-    /**
-     * @brief I2C Address of your display
-     * 
-     */
-    #define SSD1306_CFG_ADDRESS 0x3C
-#endif
-
-#define DisplayAddress SSD1306_CFG_ADDRESS
-#define DisplayWidth SSD1306_CFG_WIDTH
-#define DisplayHeight SSD1306_CFG_HEIGHT
-#define DisplayPages ( SSD1306_CFG_HEIGHT / 8 )
-
 #define SSD1306_COM_Disable_LR_Remap 0
 #define SSD1306_COM_Enable_LR_Remap ( 1 << 5 )
 
@@ -77,11 +48,6 @@
 #define SSD1306_I2C_Command 0x00
 #define SSD1306_I2C_Data 0x40
 
-typedef enum {
-    SSD_COLOR_BLACK = 0,
-    SSD_COLOR_WHITE
-} SSD_COLOR;
-
 /**
  * @brief Type of memory to pull data from when writing to the display
  * 
@@ -92,211 +58,235 @@ typedef enum {
     DataSource_EEPROM /**< Data is on an EEPROM */
 } DataSource;
 
+struct DisplayInterfaceProcs_s;
+
 /**
- * @brief Structure containing pointers to I2C communication functions
+ * @brief Screen device interface, details, and, control lines.
  * 
  */
 typedef struct {
-    void ( *StartTransmission ) ( const int Address );
-    void ( *Write ) ( const uint8_t* Data, const size_t Length );
-    void ( *WriteByte ) ( const uint8_t Data );
-    void ( *EndTransmission ) ( void );
+    struct DisplayInterfaceProcs_s* Interface; /**< Interface callbacks to talk to the display */
 
-    size_t ( *EEPROMRead ) ( const uint16_t Address, uint8_t* Buffer, size_t Length );
-    uint8_t ( *EEPROMReadByte ) ( const uint16_t Address );
+    uint8_t Width; /**< Width of the display in pixels */
+    uint8_t Height; /**< Height of the display in pixels */
 
-    /**
-     * @remark Maximum number of bytes your I2C API can transmit at a time
-     * @remark The API will split up larger transfers to fit within this limit
-     */
-    const size_t TXBufferLen;
-} I2CProcs;
+    uint8_t Address; /**< Address of display if using I2C */
+    int8_t CSPin; /**< Chip select pin if using SPI */
+
+    uint8_t PrintX; /**< Current X coordinate for PrintXXX functions */
+    uint8_t PrintY; /**< Current Y coordinate for PrintXXX functions */
+
+    const GLCD_FontDef* CurrentFont; /**< Pointer to GLCD font to use for text drawing */
+} tssd1306;
+
+/**
+ * @brief Callbacks used for communicating with the display.
+ * 
+ */
+typedef struct DisplayInterfaceProcs_s {
+    void ( *StartTransmission ) ( tssd1306* DeviceHandle, bool IsCommand ); /**< Begin talking to the display */
+    size_t ( *Write ) ( tssd1306* DeviceHandle, const uint8_t* Data, const size_t Length ); /**< Write buffer to the display */
+    void ( *WriteByte ) ( tssd1306* DeviceHandle, const uint8_t Data ); /**< Write single byte to the display */
+    void ( *EndTransmission ) ( tssd1306* DeviceHandle ); /**< Finish writing to the display */
+
+    size_t MaxTransferSize; /**< Maximum number of bytes per transmission */
+} DisplayInterfaceProcs;
 
 #ifdef __cplusplus
     extern "C" {
 #endif
 
+__attribute__( ( weak ) ) size_t EEPROMRead( const uint16_t Address, uint8_t* Buffer, size_t Length );
+__attribute__( ( weak ) ) uint8_t EEPROMReadByte( const uint16_t Address );
+
 #if defined HAS_DEBUG
-    __attribute__( ( weak ) ) void DebugPrintString( const char* Text, ... );
+    __attribute__( ( weak ) ) void DebugPrintString( const char* Fmt, ... );
 #else
-    #define DebugPrintString( text, ... )
+    #define DebugPrintString( Fmt, ... )
 #endif
 
 /**
  * @brief Sends a command to the display that takes no parameters
  * 
+ * @param [ in ] DeviceHandle Pointer to device handle
  * @param [ in ] Command Opcode of command
  * @remark For example, SSD1306_Op_Horizontal_Flip_On is a single byte command
  */
-void SSD1306_SendSingleByteCommand( const uint8_t Command );
+void SSD1306_SendSingleByteCommand( tssd1306* DeviceHandle, const uint8_t Command );
 
 /**
  * @brief Sends a command to the display that takes a single parameter
  * 
+ * @param [ in ] DeviceHandle Pointer to device handle
  * @param [ in ] Command Opcode of command
  * @param [ in ] Param0 Command parameter
  * @remark For example, SSD1306_Op_SetContrast is a double byte command
  */
-void SSD1306_SendDoubleByteCommand( const uint8_t Command, const uint8_t Param0 );
+void SSD1306_SendDoubleByteCommand( tssd1306* DeviceHandle, const uint8_t Command, const uint8_t Param0 );
 
 /**
  * @brief Sends a command to the display that takes two parameters
  * 
+ * @param [ in ] DeviceHandle Pointer to device handle
  * @param [ in ] Command Opcode of command 
  * @param [ in ] Param0 First parameter
  * @param [ in ] Param1 Second parameter
  * @remark SSD1306_Op_SetColumnAddress is an example of a triple byte command
  */
-void SSD1306_SendTripleByteCommand( const uint8_t Command, const uint8_t Param0, const uint8_t Param1 );
+void SSD1306_SendTripleByteCommand( tssd1306* DeviceHandle, const uint8_t Command, const uint8_t Param0, const uint8_t Param1 );
 
 /**
  * @brief Writes data from the given source to the display
  * 
+ * @param [ in ] DeviceHandle Pointer to device handle
  * @param [ in ] Source Where to pull the data from 
  * @param [ in ] Data Pointer to data, except for EEPROMS where this is an address within the EEPROM
  * @param [ in ] Length Length of data to send 
  */
-void SSD1306_WriteData( DataSource Source, const uint8_t* Data, size_t Length );
+void SSD1306_WriteData( tssd1306* DeviceHandle, DataSource Source, const uint8_t* Data, size_t Length );
 
 /**
  * @brief Writes a single byte to the display
  * 
+ * @param [ in ] DeviceHandle Pointer to device handle
  * @param [ in ] Data Data byte to write to the display 
  */
-void SSD1306_WriteDataByte( const uint8_t Data );
+void SSD1306_WriteDataByte( tssd1306* DeviceHandle, const uint8_t Data );
 
 /**
  * @brief Fills the screen with (Pattern)
  * 
+ * @param [ in ] DeviceHandle Pointer to device handle
  * @param [ in ] Pattern 8 Bit pattern to fill the screen with.
  * @remark Pattern corresponds to 8 pixels vertically with bit 0 being the top pixel and bit 7 being the bottom.
  * @remark For example, a pattern of 1 would be a line going horizontally from one side of the screen to the other every 8 pixels vertically.
  */
-void SSD1306_Clear( const uint8_t Pattern );
+void SSD1306_Clear( tssd1306* DeviceHandle, const uint8_t Pattern );
 
 /**
  * @brief Draws an individual pixel
  * 
- * @param x [ in ] X Coordinate 
- * @param y [ in ] Y Coordinate
- * @param Color [ in ] Pixel color
+ * @param [ in ] DeviceHandle Pointer to device handle
+ * @param [ in ] x X Coordinate 
+ * @param [ in ] y Y Coordinate
  * @remark This overwrites any existing pixels at the page the y coordinate is located on
  * @remark For example, if you have a pixel on at 0,0 and you then draw a pixel at 0,1 then the first pixel will be overwritten
  * @remark and only the one at 0,1 will be visible
  */
-void SSD1306_DrawPixel( const int x, const int y, const SSD_COLOR Color );
+void SSD1306_DrawPixel( tssd1306* DeviceHandle, const int x, const int y );
 
 /**
  * @brief Draws a horizontal line
  * 
- * @param x0 [ in ] Start X coordinate
- * @param y [ in ] Start Y coordinate
- * @param x1 [ in ] End X coordinate
- * @param Color Line color
+ * @param [ in ] DeviceHandle Pointer to device handle 
+ * @param [ in ] x0 Start X coordinate
+ * @param [ in ] y Start Y coordinate
+ * @param [ in ] x1 End X coordinate
  * @remark This will overwrite anything already within the same page ( y / 8 )
  */
-void SSD1306_DrawHLine( const int x0, const int y, const int x1, const SSD_COLOR Color );
+void SSD1306_DrawHLine( tssd1306* DeviceHandle, const int x0, const int y, const int x1 );
 
 /**
  * @brief Draws a vertical line
  * 
- * @param x [ in ] Start X coordinate
- * @param y0 [ in ] Start Y coordinate
- * @param y1 [ in ] End Y coordinate
- * @param Color [ in ] Line color
+ * @param [ in ] DeviceHandle Pointer to device handle
+ * @param [ in ] x Start X coordinate
+ * @param [ in ] y0 Start Y coordinate
+ * @param [ in ] y1 End Y coordinate
  */
-void SSD1306_DrawVLine( const int x, const int y0, const int y1, const SSD_COLOR Color );
+void SSD1306_DrawVLine( tssd1306* DeviceHandle, const int x, const int y0, const int y1 );
 
-void SSD1306_FillRect( const int x0, const int y0, const int x1, const int y1, const SSD_COLOR Color );
+/**
+ * @brief Fills a section of screen with white, y coordinate must be 8 aligned
+ * 
+ * @param [ in ] DeviceHandle Pointer to device handle 
+ * @param [ in ] x0 Start X coordinate 
+ * @param [ in ] y0 Start Y cooddinate 
+ * @param [ in ] x1 End X coordinate 
+ * @param [ in ] y1 End Y coordinate 
+ */
+void SSD1306_FillRect( tssd1306* DeviceHandle, const int x0, const int y0, const int x1, const int y1 );
 
 /**
  * @brief Draws a character
  * 
- * @param c [ in ] Character to draw
- * @param x [ in ] X Coordinate
- * @param y [ in ] Y Coordinate
- * @param Color [ in ] Color to draw character
+ * @param [ in ] DeviceHandle Pointer to device handle
+ * @param [ in ] c Character to draw
+ * @param [ in ] x X Coordinate
+ * @param [ in ] y Y Coordinate
  * @return int Width of the character if drawn, -1 if character would be clipped or is not in the font
  */
-int SSD1306_DrawChar( const char c, const int x, const int y, const SSD_COLOR Color );
+int SSD1306_DrawChar( tssd1306* DeviceHandle, const char c, const int x, const int y );
 
 /**
  * @brief Draws a string of characters
  * 
- * @param Text [ in ] String to draw
- * @param x [ in ] X Coordinate
- * @param y [ in ] Y Coordinate
- * @param Color [ in ] Color to draw characters
+ * @param [ in ] DeviceHandle Pointer to device handle
+ * @param [ in ] Text String to draw
+ * @param [ in ] x X Coordinate
+ * @param [ in ] y Y Coordinate
  * @return X Coordinate after last character
  * @remark This will obey newline characters as well as move down a row if the end of the screen is reached
  */
-int SSD1306_DrawString( const char* Text, int x, int y, const SSD_COLOR Color );
+int SSD1306_DrawString( tssd1306* DeviceHandle, const char* Text, int x, int y );
 
 /**
  * @brief Sets the location where the SSD1306_Printxxx routines should start drawing characters
  * 
+ * @param [ in ] DeviceHandle Pointer to device handle
  * @param [ in ] x New X cursor coordinate 
  * @param [ in ] y New Y cursor coordinage 
  */
-void SSD1306_SetPrintCursor( const int x, const int y );
+void SSD1306_SetPrintCursor( tssd1306* DeviceHandle, const int x, const int y );
 
 /**
  * @brief Gets the location of the cursor used in the SSD1306_Printxxx routines
  * 
+ * @param [ in ] DeviceHandle Pointer to device handle
  * @param [ out ] x Current cursor X coordinate 
  * @param [ out ] y Current cursor Y coordinate 
  */
-void SSD1306_GetPrintCursor( int* x, int* y );
-
-/**
- * @brief Returns the current drawing color used by the SSD1306_Printxxx routines
- * 
- * @return const SSD_COLOR Current text drawing color
- */
-const SSD_COLOR SSD1306_GetPrintColor( void );
-
-/**
- * @brief Sets the drawing color used by the SSD1306_Printxxx routnes
- * 
- * @param [ in ] Color New color 
- */
-void SSD1306_SetPrintColor( const SSD_COLOR Color ) ;
+void SSD1306_GetPrintCursor( tssd1306* DeviceHandle, int* x, int* y );
 
 /**
  * @brief Draws a character to the screen
  * 
+ * @param [ in ] DeviceHandle Pointer to device handle
  * @param [ in ] c Character to draw 
  * @remark Supported escape characters are \r \n \t
  */
-void SSD1306_PrintChar( const char c );
+void SSD1306_PrintChar( tssd1306* DeviceHandle, const char c );
 
 /**
  * @brief Draws a string of characters to the screen
  * 
+ * @param [ in ] DeviceHandle Pointer to device handle
  * @param [ in ] Text Text to draw 
  */
-void SSD1306_PrintString( const char* Text );
+void SSD1306_PrintString( tssd1306* DeviceHandle, const char* Text );
 
 /**
  * @brief Draws an integer to the screen
  * 
+ * @param [ in ] DeviceHandle Pointer to device handle
  * @param [ in ] Value Integer value to draw 
  */
-void SSD1306_PrintInt( const int Value );
+void SSD1306_PrintInt( tssd1306* DeviceHandle, const int Value );
 
 /**
  * @brief Sets the current font
  * 
+ * @param [ in ] DeviceHandle Pointer to device handle
  * @param Font [ in ] New font to use
  */
-void SSD1306_SetFont( const GLCD_FontDef* Font );
+void SSD1306_SetFont( tssd1306* DeviceHandle, const GLCD_FontDef* Font );
 
 /**
  * @brief Initializes and zeroes out the display
  * 
- * @param I2CInterface [ in ] I2C Interface
+ * @param [ in ] DeviceHandle Pointer to device handle
  */
-void SSD1306_Init( const I2CProcs* I2CInterface );
+void SSD1306_Init( tssd1306* DeviceHandle );
 
 #ifdef __cplusplus
     }
